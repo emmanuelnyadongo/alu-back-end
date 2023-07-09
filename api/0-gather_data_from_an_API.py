@@ -1,29 +1,53 @@
 #!/usr/bin/python3
-""" Calls an API in order to get completed tasks """
-import requests
-import sys
+"""Displays tasks information of a given employee
+Trying two lines
+"""
+from requests import get
+from sys import argv
 
 
-if __name__ == '__main__':
-    userId = sys.argv[1]
-    url_todo = 'https://jsonplaceholder.typicode.com/users/1/todos/'
-    url_user = 'https://jsonplaceholder.typicode.com/users'
-    todo = requests.get(url_todo, params={'userId': userId})
-    user = requests.get(url_user, params={'id': userId})
+def get_data(url):
+    """Utility method to get data from any api endpoint and parse the json
+    params:
+        - url (str) - the URL endpoint
+    """
+    request = get(url)
 
-    todo_dict_list = todo.json()
-    user_dict_list = user.json()
+    if request.get('status_code') == 200:
+        try:
+            return request.json()
+        except:
+            raise Exception("")
 
-    completed_tasks = []
-    total_tasks = len(todo_dict_list)
-    employee = user_dict_list[0].get('name')
 
-    for task in todo_dict_list:
-        if task['completed']:
-            completed_tasks.append(task)
+def main():
+    """The main function from which the whole program starts
+    """
+    # Extract the user id from the script arguments
+    employee_id = argv[1]
 
-    print("Employee {} is done with tasks({}/{}):"
-          .format(employee, len(completed_tasks), total_tasks))
+    # Getting the name
+    user_url = f'https://jsonplaceholder.typicode.com/users/{employee_id}'
+    name = get_data(user_url).get('name')
 
-    for task in completed_tasks:
-        print("\t {}".format(task.get('title')))
+    # Getting the todos
+    tasks_url = f'https://jsonplaceholder.typicode.com/todos?userId={employee_id}'
+    todos = get_data(tasks_url)
+
+    total_number_of_todos = len(todos)
+    number_of_completed_todos = 0
+
+    for todo in todos:
+        if todo.get('completed'):
+            number_of_completed_todos += 1
+
+    print(
+        f'Employee {name} is done with tasks({number_of_completed_todos}/{total_number_of_todos})')
+
+    for todo in todos:
+        if todo.get('completed'):
+            print(f'\t {todo.get("title")}')
+
+
+if __name__ == "__main__":
+    main()
